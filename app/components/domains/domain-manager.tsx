@@ -40,10 +40,15 @@ export function DomainManager() {
   useEffect(() => { fetchDomains() }, [])
 
   const handleAdd = async () => {
+    // 子域自动拼接：输入 "mail" + 父域 "ishalumi.me" → "mail.ishalumi.me"
+    const fullName = newDomain.type === "subdomain" && newDomain.parentDomain
+      ? `${newDomain.name}.${newDomain.parentDomain}`
+      : newDomain.name
+
     const res = await fetch("/api/domains", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newDomain)
+      body: JSON.stringify({ ...newDomain, name: fullName })
     })
     if (!res.ok) {
       const data = await res.json() as { error: string }
@@ -100,8 +105,6 @@ export function DomainManager() {
           <DialogContent>
             <DialogHeader><DialogTitle>添加域名</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <Input placeholder="域名（如 mail.example.com）" value={newDomain.name}
-                onChange={e => setNewDomain(p => ({ ...p, name: e.target.value }))} />
               <Select value={newDomain.type}
                 onValueChange={v => setNewDomain(p => ({ ...p, type: v as "native" | "subdomain" }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -120,6 +123,18 @@ export function DomainManager() {
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {newDomain.type === "native" ? (
+                <Input placeholder="域名（如 example.com）" value={newDomain.name}
+                  onChange={e => setNewDomain(p => ({ ...p, name: e.target.value }))} />
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Input placeholder="子域前缀（如 mail）" value={newDomain.name}
+                    onChange={e => setNewDomain(p => ({ ...p, name: e.target.value }))} className="flex-1" />
+                  {newDomain.parentDomain && (
+                    <span className="text-sm text-muted-foreground shrink-0">.{newDomain.parentDomain}</span>
+                  )}
+                </div>
               )}
               <Button onClick={handleAdd} className="w-full">添加</Button>
             </div>
