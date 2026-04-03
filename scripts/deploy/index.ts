@@ -477,14 +477,26 @@ const pushCfCredentialsToKV = () => {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
   if (!token || !accountId) return
 
+  // 从 wrangler.json 读取 KV namespace ID
+  const wranglerPath = resolve("wrangler.json")
+  if (!existsSync(wranglerPath)) return
+
+  let namespaceId: string | undefined
+  try {
+    const json = JSON.parse(readFileSync(wranglerPath, "utf-8"))
+    namespaceId = json.kv_namespaces?.[0]?.id
+  } catch { return }
+
+  if (!namespaceId) return
+
   console.log("🔐 Writing CF credentials to KV...")
   try {
     execSync(
-      `pnpm dlx wrangler kv key put --binding=SITE_CONFIG "CF_API_TOKEN" "${token}"`,
+      `pnpm dlx wrangler kv key put --namespace-id=${namespaceId} "CF_API_TOKEN" "${token}"`,
       { stdio: "inherit" }
     )
     execSync(
-      `pnpm dlx wrangler kv key put --binding=SITE_CONFIG "CF_ACCOUNT_ID" "${accountId}"`,
+      `pnpm dlx wrangler kv key put --namespace-id=${namespaceId} "CF_ACCOUNT_ID" "${accountId}"`,
       { stdio: "inherit" }
     )
     console.log("✅ CF credentials written to KV")

@@ -32,6 +32,12 @@ export function WebsiteConfigPanel() {
   const [cfApiToken, setCfApiToken] = useState("")
   const [cfAccountId, setCfAccountId] = useState("")
   const [showCfToken, setShowCfToken] = useState(false)
+  const [cfCheckResult, setCfCheckResult] = useState<{
+    tokenConfigured: boolean; accountIdConfigured: boolean;
+    apiReachable: boolean; apiError: string;
+    zones: Array<{ id: string; name: string }>
+  } | null>(null)
+  const [cfChecking, setCfChecking] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
@@ -252,6 +258,38 @@ export function WebsiteConfigPanel() {
               placeholder="输入 Cloudflare Account ID"
             />
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={cfChecking}
+            onClick={async () => {
+              setCfChecking(true)
+              try {
+                const res = await fetch("/api/config/cf-check")
+                const data = await res.json()
+                setCfCheckResult(data)
+              } catch {
+                setCfCheckResult({ tokenConfigured: false, accountIdConfigured: false, apiReachable: false, apiError: "请求失败", zones: [] })
+              } finally {
+                setCfChecking(false)
+              }
+            }}
+          >
+            {cfChecking ? "检查中..." : "检查 CF 连接状态"}
+          </Button>
+
+          {cfCheckResult && (
+            <div className="text-xs space-y-1 p-2 rounded bg-muted">
+              <p>Token: {cfCheckResult.tokenConfigured ? "✅ 已配置" : "❌ 未配置"}</p>
+              <p>Account ID: {cfCheckResult.accountIdConfigured ? "✅ 已配置" : "❌ 未配置"}</p>
+              <p>API 连通: {cfCheckResult.apiReachable ? "✅ 正常" : `❌ ${cfCheckResult.apiError}`}</p>
+              {cfCheckResult.zones.length > 0 && (
+                <p>可访问域名: {cfCheckResult.zones.map(z => z.name).join(", ")}</p>
+              )}
+            </div>
+          )}
         </div>
 
         <Button 
