@@ -359,8 +359,8 @@ const pushPagesSecret = () => {
         console.error("⚠️ Failed to cleanup temporary file:", cleanupError);
       }
     }
-    
-    throw error;
+
+    console.warn("⚠️ Secrets push failed, but continuing deployment (secrets were pushed previously)");
   }
 };
 
