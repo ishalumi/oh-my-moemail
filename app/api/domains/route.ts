@@ -2,7 +2,7 @@ import { createDb } from "@/lib/db"
 import { domains } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
-import { getZoneIdByName, setupSubdomainDns, createCatchAllRule } from "@/lib/cloudflare-email"
+import { getZoneIdByName, setupSubdomainDns, enableEmailRouting, createCatchAllRule } from "@/lib/cloudflare-email"
 
 export const runtime = "edge"
 
@@ -56,10 +56,15 @@ export async function POST(request: Request) {
     cfError = `Zone ID 解析失败: ${error instanceof Error ? error.message : String(error)}`
   }
 
-  // 子域：自动创建 DNS 记录 + 配置路由
-  if (type === "subdomain" && resolvedZoneId) {
+  // 自动启用 Email Routing + catch-all（原生域和子域都执行）
+  if (resolvedZoneId && !cfError) {
     try {
-      await setupSubdomainDns(resolvedZoneId, name.toLowerCase())
+      // 子域需要先创建 DNS 记录
+      if (type === "subdomain") {
+        await setupSubdomainDns(resolvedZoneId, name.toLowerCase())
+      }
+      // 原生域和子域都启用路由 + catch-all
+      await enableEmailRouting(resolvedZoneId)
       await createCatchAllRule(resolvedZoneId, "email-receiver-worker")
       cfRouteEnabled = true
     } catch (error) {
@@ -75,5 +80,7 @@ export async function POST(request: Request) {
     cfRouteEnabled,
   }).returning()
 
-  return NextResponse.json({ domain: result[0], cfError })
+  // 201 = 创建成功, 207 = 域名已添加但 CF 配置有问题
+  const status = cfError ? 207 : 201
+  return NextResponse.json({ domain: result[0], cfError }, { status })
 }

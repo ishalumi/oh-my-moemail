@@ -60,7 +60,7 @@ export function DomainManager() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...newDomain, name: fullName })
     })
-    if (!res.ok) {
+    if (!res.ok && res.status !== 207) {
       const data = await res.json() as { error: string }
       toast({ title: "错误", description: data.error, variant: "destructive" })
       return
