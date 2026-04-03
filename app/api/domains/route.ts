@@ -2,7 +2,7 @@ import { createDb } from "@/lib/db"
 import { domains } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
-import { getZoneIdByName } from "@/lib/cloudflare-email"
+import { getZoneIdByName, setupSubdomainDns, enableEmailRouting, createCatchAllRule } from "@/lib/cloudflare-email"
 
 export const runtime = "edge"
 
@@ -37,24 +37,30 @@ export async function POST(request: Request) {
 
   // 自动解析 CF Zone ID
   let resolvedZoneId: string | undefined
+  let cfRouteEnabled = false
   try {
     if (type === "native") {
-      // 原生域：直接从 CF 查
       resolvedZoneId = await getZoneIdByName(name.toLowerCase())
     } else if (parentDomain) {
-      // 子域：从父域继承
       const parent = await db.query.domains.findFirst({
         where: eq(domains.name, parentDomain.toLowerCase())
       })
       if (parent?.cfZoneId) {
         resolvedZoneId = parent.cfZoneId
       } else {
-        // 父域没有 zoneId，尝试从 CF 查父域
         resolvedZoneId = await getZoneIdByName(parentDomain.toLowerCase())
       }
     }
-  } catch {
-    // CF API 未配置或查不到，zoneId 留空，后续可手动配置
+
+    // 子域：自动创建 DNS 记录 + 配置路由
+    if (type === "subdomain" && resolvedZoneId) {
+      await setupSubdomainDns(resolvedZoneId, name.toLowerCase())
+      await createCatchAllRule(resolvedZoneId, "moemail-email-receiver")
+      cfRouteEnabled = true
+    }
+  } catch (error) {
+    console.error("CF auto-setup failed:", error)
+    // CF 配置失败不阻断域名添加，后续可手动启用
   }
 
   const result = await db.insert(domains).values({
@@ -62,6 +68,7 @@ export async function POST(request: Request) {
     type,
     parentDomain: parentDomain?.toLowerCase(),
     cfZoneId: resolvedZoneId,
+    cfRouteEnabled,
   }).returning()
 
   return NextResponse.json({ domain: result[0] })
