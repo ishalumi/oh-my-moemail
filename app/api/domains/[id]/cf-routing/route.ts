@@ -22,7 +22,7 @@ export async function POST(
   }
 
   const { workerName } = await request.json() as { workerName?: string }
-  const worker = workerName || "moemail-email-receiver"
+  const worker = workerName || "email-receiver-worker"
 
   try {
     // 子域：先添加 DNS 记录（MX + TXT），让 CF 识别子域

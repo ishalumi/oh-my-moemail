@@ -3,6 +3,7 @@ import { domains } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { getZoneIdByName, setupSubdomainDns, createCatchAllRule } from "@/lib/cloudflare-email"
+import { getRequestContext } from "@cloudflare/next-on-pages"
 
 export const runtime = "edge"
 
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
   if (type === "subdomain" && resolvedZoneId) {
     try {
       await setupSubdomainDns(resolvedZoneId, name.toLowerCase())
-      await createCatchAllRule(resolvedZoneId, "moemail-email-receiver")
+      await createCatchAllRule(resolvedZoneId, "email-receiver-worker")
       cfRouteEnabled = true
     } catch (error) {
       cfError = `CF 路由配置失败: ${error instanceof Error ? error.message : String(error)}`
