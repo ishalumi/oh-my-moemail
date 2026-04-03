@@ -40,7 +40,8 @@
 </p>
 
 ## 在线演示
-[https://moemail.app](https://moemail.app)
+
+> 本项目为自部署项目，请参考 [部署](#部署) 章节搭建自己的实例。
 
 ![首页](https://pic.otaku.ren/20241209/AQADwsUxG9k1uVZ-.jpg "首页")
 
@@ -50,9 +51,8 @@
 ![个人中心](https://pic.otaku.ren/20241227/AQADVsIxG7OzcFd-.jpg "个人中心")
 
 ## 文档
-**完整文档**: [https://docs.moemail.app](https://docs.moemail.app)
 
-文档站点包含详细的使用指南、API 文档、部署教程等完整信息。
+完整文档请查阅本 README 及 [OpenAPI](#openapi) 章节。
 
 ## 特性
 
@@ -211,7 +211,7 @@ pnpm dlx tsx ./scripts/deploy/index.ts
 - 确保所有 Secrets 都已正确设置
 - 使用 tag 触发时，tag 必须以 `v` 开头（例如：v1.0.0）
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/beilunyang/moemail)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/ishalumi/oh-my-moemail)
 
 
 ## 邮箱域名配置
@@ -1045,10 +1045,10 @@ CONTENT=$(moemail read --email-id $EMAIL_ID --message-id $MSG_ID --json)
 
 ## Star History
 
-<a href="https://www.star-history.com/#beilunyang/moemail&Date">
+<a href="https://www.star-history.com/#ishalumi/oh-my-moemail&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=beilunyang/moemail&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=beilunyang/moemail&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=beilunyang/moemail&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ishalumi/oh-my-moemail&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ishalumi/oh-my-moemail&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ishalumi/oh-my-moemail&type=Date" />
  </picture>
 </a>

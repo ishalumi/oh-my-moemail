@@ -94,8 +94,8 @@ All commands support `--json` flag for structured output, making them ideal for 
 
 ## Project Links
 
-- **Main Project**: https://github.com/beilunyang/moemail
-- **Issues & Feedback**: https://github.com/beilunyang/moemail/issues
+- **Main Project**: https://github.com/ishalumi/oh-my-moemail
+- **Issues & Feedback**: https://github.com/ishalumi/oh-my-moemail/issues
 
 ## License
 
