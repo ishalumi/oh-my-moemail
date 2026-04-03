@@ -170,7 +170,7 @@ export const messageShares = sqliteTable('message_share', {
 
 
 
-export const domainsRelations = relations(domains, ({ many }) => ({
+export const domainsRelations = relations(domains, () => ({
 }))
 
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({

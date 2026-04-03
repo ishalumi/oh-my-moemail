@@ -1,6 +1,6 @@
 import { createDb } from "@/lib/db"
 import { domains } from "@/lib/schema"
-import { eq, and } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 
 export const runtime = "edge"
