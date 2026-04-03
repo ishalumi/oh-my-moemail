@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-import { Badge } from "@/components/ui/badge"
 import { Trash2, Globe, Zap } from "lucide-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
@@ -131,7 +130,7 @@ export function DomainManager() {
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 <span className="font-medium">{d.name}</span>
-                {d.cfRouteEnabled && <Badge variant="secondary">CF 路由已启用</Badge>}
+                {d.cfRouteEnabled && <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded">CF 路由已启用</span>}
               </div>
               <div className="flex gap-1">
                 {d.cfZoneId && !d.cfRouteEnabled && (
@@ -158,8 +157,8 @@ export function DomainManager() {
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-muted-foreground" />
                   <span>{d.name}</span>
-                  <Badge variant="outline">{d.parentDomain}</Badge>
-                  {d.cfRouteEnabled && <Badge variant="secondary">CF 路由已启用</Badge>}
+                  <span className="text-xs border px-2 py-0.5 rounded">{d.parentDomain}</span>
+                  {d.cfRouteEnabled && <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded">CF 路由已启用</span>}
                 </div>
                 <div className="flex gap-1">
                   {d.cfZoneId && !d.cfRouteEnabled && (
