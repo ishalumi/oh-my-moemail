@@ -25,7 +25,7 @@ export function DomainManager() {
   const [domains, setDomains] = useState<Domain[]>([])
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
-  const [newDomain, setNewDomain] = useState({ name: "", type: "native" as const, parentDomain: "", cfZoneId: "" })
+  const [newDomain, setNewDomain] = useState({ name: "", type: "native" as "native" | "subdomain", parentDomain: "", cfZoneId: "" })
   const { toast } = useToast()
 
   const fetchDomains = async () => {
