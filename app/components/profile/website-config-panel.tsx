@@ -268,7 +268,7 @@ export function WebsiteConfigPanel() {
               setCfChecking(true)
               try {
                 const res = await fetch("/api/config/cf-check")
-                const data = await res.json()
+                const data = (await res.json()) as typeof cfCheckResult
                 setCfCheckResult(data)
               } catch {
                 setCfCheckResult({ tokenConfigured: false, accountIdConfigured: false, apiReachable: false, apiError: "请求失败", zones: [] })
