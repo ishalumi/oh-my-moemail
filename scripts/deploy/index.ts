@@ -492,11 +492,11 @@ const pushCfCredentialsToKV = () => {
   console.log("🔐 Writing CF credentials to KV...")
   try {
     execSync(
-      `pnpm dlx wrangler kv key put --namespace-id=${namespaceId} "CF_API_TOKEN" "${token}"`,
+      `pnpm dlx wrangler kv key put --namespace-id=${namespaceId} --remote "CF_API_TOKEN" "${token}"`,
       { stdio: "inherit" }
     )
     execSync(
-      `pnpm dlx wrangler kv key put --namespace-id=${namespaceId} "CF_ACCOUNT_ID" "${accountId}"`,
+      `pnpm dlx wrangler kv key put --namespace-id=${namespaceId} --remote "CF_ACCOUNT_ID" "${accountId}"`,
       { stdio: "inherit" }
     )
     console.log("✅ CF credentials written to KV")
