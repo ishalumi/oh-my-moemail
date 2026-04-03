@@ -29,6 +29,9 @@ export function WebsiteConfigPanel() {
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("")
   const [turnstileSecretKey, setTurnstileSecretKey] = useState("")
   const [showSecretKey, setShowSecretKey] = useState(false)
+  const [cfApiToken, setCfApiToken] = useState("")
+  const [cfAccountId, setCfAccountId] = useState("")
+  const [showCfToken, setShowCfToken] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
@@ -48,6 +51,10 @@ export function WebsiteConfigPanel() {
           enabled: boolean,
           siteKey: string,
           secretKey?: string
+        },
+        cloudflare?: {
+          apiToken: string,
+          accountId: string
         }
       }
       setDefaultRole(data.defaultRole)
@@ -56,6 +63,8 @@ export function WebsiteConfigPanel() {
       setTurnstileEnabled(Boolean(data.turnstile?.enabled))
       setTurnstileSiteKey(data.turnstile?.siteKey ?? "")
       setTurnstileSecretKey(data.turnstile?.secretKey ?? "")
+      setCfApiToken(data.cloudflare?.apiToken ?? "")
+      setCfAccountId(data.cloudflare?.accountId ?? "")
     }
   }
 
@@ -73,7 +82,9 @@ export function WebsiteConfigPanel() {
             enabled: turnstileEnabled,
             siteKey: turnstileSiteKey,
             secretKey: turnstileSecretKey
-          }
+          },
+          cfApiToken: cfApiToken.includes("...") ? undefined : cfApiToken,
+          cfAccountId,
         }),
       })
 
@@ -195,6 +206,51 @@ export function WebsiteConfigPanel() {
             <p className="text-xs text-muted-foreground">
               {t("turnstile.secretKeyDescription")}
             </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-lg border border-dashed border-primary/40 p-4">
+          <div className="space-y-1">
+            <Label className="text-sm font-medium">Cloudflare API</Label>
+            <p className="text-xs text-muted-foreground">
+              用于域名管理中自动配置 Email Routing（DNS 记录 + 路由规则）
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cf-api-token" className="text-sm font-medium">
+              API Token
+            </Label>
+            <div className="relative">
+              <Input
+                id="cf-api-token"
+                type={showCfToken ? "text" : "password"}
+                value={cfApiToken}
+                onChange={(e) => setCfApiToken(e.target.value)}
+                placeholder="输入 Cloudflare API Token"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowCfToken((prev) => !prev)}
+              >
+                {showCfToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cf-account-id" className="text-sm font-medium">
+              Account ID
+            </Label>
+            <Input
+              id="cf-account-id"
+              value={cfAccountId}
+              onChange={(e) => setCfAccountId(e.target.value)}
+              placeholder="输入 Cloudflare Account ID"
+            />
           </div>
         </div>
 
