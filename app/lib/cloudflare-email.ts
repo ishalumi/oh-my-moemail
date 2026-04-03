@@ -21,9 +21,10 @@ async function cfFetch(path: string, options: RequestInit = {}) {
       ...options.headers,
     },
   })
-  const data = await res.json() as { success: boolean; errors?: Array<{ message: string }>; result?: unknown }
+  const data = await res.json() as { success: boolean; errors?: Array<{ code: number; message: string }>; result?: unknown }
   if (!data.success) {
-    throw new Error(data.errors?.[0]?.message || "CF API 调用失败")
+    const errMsg = data.errors?.map(e => `[${e.code}] ${e.message}`).join('; ') || `HTTP ${res.status}`
+    throw new Error(`CF API ${path}: ${errMsg}`)
   }
   return data.result
 }
