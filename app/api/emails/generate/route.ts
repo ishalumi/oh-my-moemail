@@ -40,10 +40,11 @@ export async function POST(request: Request) {
       }
     }
 
-    const { name, expiryTime, domain } = await request.json<{ 
+    const { name, expiryTime, domain, label } = await request.json<{ 
       name: string
       expiryTime: number
       domain: string
+      label?: string
     }>()
 
     if (!EXPIRY_OPTIONS.some(option => option.value === expiryTime)) {
@@ -88,7 +89,8 @@ export async function POST(request: Request) {
       address,
       createdAt: now,
       expiresAt: expires,
-      userId: userId!
+      userId: userId!,
+      label: label?.trim() || null
     }
     
     const result = await db.insert(emails)

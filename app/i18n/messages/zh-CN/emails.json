@@ -32,8 +32,11 @@
     "tabAll": "全部",
     "tabPermanent": "永久",
     "tabTemporary": "时效",
-    "searchPlaceholder": "搜索邮箱...",
-    "allDomains": "全部域名"
+    "searchPlaceholder": "搜索邮箱或备注",
+    "allDomains": "全部域名",
+    "editLabel": "编辑备注",
+    "labelSaved": "备注已保存",
+    "labelSaveFailed": "备注保存失败"
   },
   "create": {
     "title": "创建邮箱",
@@ -49,7 +52,9 @@
     "create": "创建",
     "creating": "创建中...",
     "success": "邮箱创建成功",
-    "failed": "创建邮箱失败"
+    "failed": "创建邮箱失败",
+    "label": "备注",
+    "labelPlaceholder": "可选，标记账户用途（如 grok注册）"
   },
   "messages": {
     "received": "收件箱",

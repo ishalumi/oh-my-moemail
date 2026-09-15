@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import { CreateDialog } from "./create-dialog"
 import { ShareDialog } from "./share-dialog"
-import { Mail, RefreshCw, Trash2, Search } from "lucide-react"
+import { Mail, RefreshCw, Trash2, Search, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ROLES } from "@/lib/permissions"
 import { useUserRole } from "@/hooks/use-user-role"
@@ -33,6 +34,7 @@ interface Email {
   address: string
   createdAt: number
   expiresAt: number
+  label?: string | null
 }
 
 interface EmailListProps {
@@ -59,6 +61,9 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [total, setTotal] = useState(0)
   const [emailToDelete, setEmailToDelete] = useState<Email | null>(null)
+  const [emailToEditLabel, setEmailToEditLabel] = useState<Email | null>(null)
+  const [labelDraft, setLabelDraft] = useState("")
+  const [savingLabel, setSavingLabel] = useState(false)
   const [activeTab, setActiveTab] = useState<"all" | "permanent" | "temporary">("all")
   const [selectedDomain, setSelectedDomain] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState<string>("")
@@ -201,6 +206,37 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
     }
   }
 
+  const handleSaveLabel = async () => {
+    if (!emailToEditLabel) return
+    setSavingLabel(true)
+    try {
+      const response = await fetch(`/api/emails/${emailToEditLabel.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: labelDraft.trim() })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        toast({
+          title: t("error"),
+          description: (data as { error: string }).error || t("labelSaveFailed"),
+          variant: "destructive"
+        })
+        return
+      }
+
+      const newLabel = labelDraft.trim() || null
+      setEmails(prev => prev.map(e => e.id === emailToEditLabel.id ? { ...e, label: newLabel } : e))
+      toast({ title: t("success"), description: t("labelSaved") })
+      setEmailToEditLabel(null)
+    } catch {
+      toast({ title: t("error"), description: t("labelSaveFailed"), variant: "destructive" })
+    } finally {
+      setSavingLabel(false)
+    }
+  }
+
   if (!session) return null
 
   return (
@@ -283,6 +319,12 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                   <Mail className="h-4 w-4 text-primary/60" />
                   <div className="truncate flex-1">
                     <div className="font-medium truncate">{email.address}</div>
+                    {email.label && (
+                      <div className="text-xs text-primary/70 truncate flex items-center gap-1">
+                        <Tag className="h-3 w-3 shrink-0" />
+                        {email.label}
+                      </div>
+                    )}
                     <div className="text-xs text-gray-500">
                       {new Date(email.expiresAt).getFullYear() === 9999 ? (
                         t("permanent")
@@ -292,6 +334,19 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                     </div>
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title={t("editLabel")}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setLabelDraft(email.label || "")
+                        setEmailToEditLabel(email)
+                      }}
+                    >
+                      <Tag className="h-4 w-4" />
+                    </Button>
                     <ShareDialog emailId={email.id} emailAddress={email.address} />
                     <Button
                       variant="ghost"
@@ -320,6 +375,32 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
           )}
         </div>
       </div>
+
+      <Dialog open={!!emailToEditLabel} onOpenChange={(o) => !o && setEmailToEditLabel(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("editLabel")}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-2">
+            <div className="text-sm text-muted-foreground truncate">{emailToEditLabel?.address}</div>
+            <Input
+              value={labelDraft}
+              onChange={(e) => setLabelDraft(e.target.value)}
+              placeholder={t("searchPlaceholder")}
+              onKeyDown={(e) => { if (e.key === "Enter" && !savingLabel) handleSaveLabel() }}
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEmailToEditLabel(null)} disabled={savingLabel}>
+              {tCommon("cancel")}
+            </Button>
+            <Button onClick={handleSaveLabel} disabled={savingLabel}>
+              {savingLabel ? "..." : tCommon("save")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!emailToDelete} onOpenChange={() => setEmailToDelete(null)}>
         <AlertDialogContent>

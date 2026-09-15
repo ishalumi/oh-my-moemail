@@ -27,6 +27,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [emailName, setEmailName] = useState("")
+  const [emailLabel, setEmailLabel] = useState("")
   const [currentDomain, setCurrentDomain] = useState("")
   const [expiryTime, setExpiryTime] = useState(EXPIRY_OPTIONS[1].value.toString())
   const { toast } = useToast()
@@ -56,7 +57,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
         body: JSON.stringify({
           name: emailName,
           domain: currentDomain,
-          expiryTime: parseInt(expiryTime)
+          expiryTime: parseInt(expiryTime),
+          label: emailLabel.trim() || undefined
         })
       })
 
@@ -77,6 +79,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       onEmailCreated()
       setOpen(false)
       setEmailName("")
+      setEmailLabel("")
     } catch {
       toast({
         title: tList("error"),
@@ -172,6 +175,16 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 )
               })}
             </RadioGroup>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Label className="shrink-0 text-muted-foreground">{t("label")}</Label>
+            <Input
+              value={emailLabel}
+              onChange={(e) => setEmailLabel(e.target.value)}
+              placeholder={t("labelPlaceholder")}
+              className="flex-1"
+            />
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -37,7 +37,13 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      conditions.push(like(sql`LOWER(${emails.address})`, `%${search.toLowerCase()}%`))
+      const kw = search.toLowerCase()
+      conditions.push(
+        or(
+          like(sql`LOWER(${emails.address})`, `%${kw}%`),
+          like(sql`LOWER(COALESCE(${emails.label},''))`, `%${kw}%`)
+        )!
+      )
     }
 
     const baseConditions = and(...conditions)

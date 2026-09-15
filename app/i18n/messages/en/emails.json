@@ -32,8 +32,11 @@
     "tabAll": "All",
     "tabPermanent": "Permanent",
     "tabTemporary": "Temporary",
-    "searchPlaceholder": "Search emails...",
-    "allDomains": "All domains"
+    "searchPlaceholder": "Search email or note",
+    "allDomains": "All domains",
+    "editLabel": "Edit note",
+    "labelSaved": "Note saved",
+    "labelSaveFailed": "Failed to save note"
   },
   "create": {
     "title": "Create Email",
@@ -49,7 +52,9 @@
     "create": "Create",
     "creating": "Creating...",
     "success": "Email created successfully",
-    "failed": "Failed to create email"
+    "failed": "Failed to create email",
+    "label": "Note",
+    "labelPlaceholder": "Optional, e.g. usage tag (grok signup)"
   },
   "messages": {
     "received": "Received",

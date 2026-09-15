@@ -32,8 +32,11 @@
     "tabAll": "すべて",
     "tabPermanent": "永久",
     "tabTemporary": "期限付き",
-    "searchPlaceholder": "メールボックスを検索...",
-    "allDomains": "すべてのドメイン"
+    "searchPlaceholder": "メールまたはメモを検索",
+    "allDomains": "すべてのドメイン",
+    "editLabel": "メモを編集",
+    "labelSaved": "メモを保存しました",
+    "labelSaveFailed": "メモの保存に失敗"
   },
   "create": {
     "title": "メールボックスを作成",
@@ -49,7 +52,9 @@
     "create": "作成",
     "creating": "作成中...",
     "success": "メールボックスを作成しました",
-    "failed": "メールボックスの作成に失敗しました"
+    "failed": "メールボックスの作成に失敗しました",
+    "label": "メモ",
+    "labelPlaceholder": "任意、用途タグ（例：grok登録）"
   },
   "messages": {
     "received": "受信箱",

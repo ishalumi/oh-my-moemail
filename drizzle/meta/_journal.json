@@ -148,6 +148,13 @@
       "when": 1743552100000,
       "tag": "0020_rename_message_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1743552200000,
+      "tag": "0021_add_email_label",
+      "breakpoints": true
     }
   ]
 }

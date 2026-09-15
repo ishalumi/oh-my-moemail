@@ -32,8 +32,11 @@
     "tabAll": "全部",
     "tabPermanent": "永久",
     "tabTemporary": "時效",
-    "searchPlaceholder": "搜尋郵箱...",
-    "allDomains": "全部域名"
+    "searchPlaceholder": "搜尋郵箱或備註",
+    "allDomains": "全部域名",
+    "editLabel": "編輯備註",
+    "labelSaved": "備註已保存",
+    "labelSaveFailed": "備註保存失敗"
   },
   "create": {
     "title": "建立郵箱",
@@ -49,7 +52,9 @@
     "create": "建立",
     "creating": "建立中...",
     "success": "郵箱建立成功",
-    "failed": "建立郵箱失敗"
+    "failed": "建立郵箱失敗",
+    "label": "備註",
+    "labelPlaceholder": "可選，標記帳戶用途（如 grok註冊）"
   },
   "messages": {
     "received": "收件匣",

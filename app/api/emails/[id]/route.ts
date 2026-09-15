@@ -44,7 +44,49 @@ export async function DELETE(
       { status: 500 }
     )
   }
-} 
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getUserId()
+
+  try {
+    const db = createDb()
+    const { id } = await params
+    const { label } = await request.json<{ label?: string }>()
+
+    const email = await db.query.emails.findFirst({
+      where: and(
+        eq(emails.id, id),
+        eq(emails.userId, userId!)
+      )
+    })
+
+    if (!email) {
+      return NextResponse.json(
+        { error: "无权限" },
+        { status: 403 }
+      )
+    }
+
+    await db.update(emails)
+      .set({ label: label?.trim() || null })
+      .where(eq(emails.id, id))
+
+    return NextResponse.json({
+      success: true,
+      email: { id, label: label?.trim() || null }
+    })
+  } catch (error) {
+    console.error('Failed to update email label:', error)
+    return NextResponse.json(
+      { error: "更新备注失败" },
+      { status: 500 }
+    )
+  }
+}
 
 const PAGE_SIZE = 20
 

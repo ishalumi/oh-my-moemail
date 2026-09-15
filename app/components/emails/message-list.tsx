@@ -48,6 +48,23 @@ interface MessageResponse {
   total: number
 }
 
+// 解析 RFC5322 发件人：优先显示名，无则回退邮箱地址，去掉尖括号包装
+function parseSenderDisplay(raw?: string): string {
+  if (!raw) return ''
+  const s = raw.trim()
+  // "Display Name" <addr@x> 或 Display Name <addr@x>
+  const m = s.match(/^\s*("?)(.*?)\1\s*<([^>]+)>\s*$/)
+  if (m) {
+    const name = m[2].trim()
+    const addr = m[3].trim()
+    return name || addr
+  }
+  // 纯 <addr@x>
+  const bare = s.match(/^<([^>]+)>$/)
+  if (bare) return bare[1].trim()
+  return s
+}
+
 export function MessageList({ email, messageType, onMessageSelect, selectedMessageId, refreshTrigger }: MessageListProps) {
   const t = useTranslations("emails.messages")
   const tList = useTranslations("emails.list")
@@ -114,6 +131,8 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   const startPolling = () => {
     stopPolling()
     pollTimeoutRef.current = setInterval(() => {
+      // 页面不可见时跳过轮询，降低 CF 平台层请求压力（429 防护）
+      if (typeof document !== 'undefined' && document.hidden) return
       if (!refreshing && !loadingMore) {
         fetchMessages()
       }
@@ -243,8 +262,10 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm truncate">{message.subject}</p>
                     <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                      <span className="truncate">
-                        {message.sender || message.recipient || ''}
+                      <span className="truncate" title={message.sender || message.recipient || ''}>
+                        {messageType === 'sent'
+                          ? (message.recipient || '')
+                          : parseSenderDisplay(message.sender) || message.recipient || ''}
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
