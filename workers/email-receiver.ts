@@ -2,9 +2,21 @@ import { Env } from '../types'
 import { drizzle } from 'drizzle-orm/d1'
 import { messages, emails, webhooks } from '../app/lib/schema'
 import { eq, sql } from 'drizzle-orm'
-import PostalMime from 'postal-mime'
+import PostalMime, { type Address } from 'postal-mime'
 import { WEBHOOK_CONFIG } from '../app/config/webhook'
 import { EmailMessage } from '../app/lib/webhook'
+
+const getMailboxAddress = (value?: Address): string | undefined => {
+  if (!value) return undefined
+  if (value.address?.trim()) return value.address.trim()
+
+  for (const member of value.group || []) {
+    const address = getMailboxAddress(member)
+    if (address) return address
+  }
+
+  return undefined
+}
 
 const handleEmail = async (message: ForwardableEmailMessage, env: Env) => {
   const db = drizzle(env.DB, { schema: { messages, emails, webhooks } })
@@ -23,9 +35,13 @@ const handleEmail = async (message: ForwardableEmailMessage, env: Env) => {
       return
     }
 
+    const sender = getMailboxAddress(parsedMessage.from)
+      || getMailboxAddress(parsedMessage.sender)
+      || message.from
+
     const savedMessage = await db.insert(messages).values({
       emailId: targetEmail.id,
-      sender: message.from,
+      sender,
       subject: parsedMessage.subject || '(无主题)',
       text: parsedMessage.text || '',
       html: parsedMessage.html || '',
