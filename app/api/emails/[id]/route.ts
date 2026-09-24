@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createDb } from "@/lib/db"
 import { emails, messages } from "@/lib/schema"
-import { eq, and, lt, or, sql, ne, isNull } from "drizzle-orm"
+import { eq, and, lt, or, sql, ne, isNull, desc } from "drizzle-orm"
 import { encodeCursor, decodeCursor } from "@/lib/cursor"
 import { getUserId } from "@/lib/apiKey"
 import { checkBasicSendPermission } from "@/lib/send-permissions"
@@ -97,6 +97,7 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const cursorStr = searchParams.get('cursor')
   const messageType = searchParams.get('type')
+  const summaryOnly = searchParams.get('summary') === '1'
 
   try {
     const db = createDb()
@@ -159,7 +160,47 @@ export async function GET(
     }
 
     const orderByTime = messageType === 'sent' ? messages.sentAt : messages.receivedAt
-    
+
+    if (summaryOnly) {
+      const results = await db
+        .select({
+          id: messages.id,
+          sender: messages.sender,
+          recipient: messages.recipient,
+          subject: messages.subject,
+          receivedAt: messages.receivedAt,
+          sentAt: messages.sentAt,
+        })
+        .from(messages)
+        .where(and(...conditions))
+        .orderBy(desc(orderByTime), desc(messages.id))
+        .limit(PAGE_SIZE + 1)
+
+      const hasMore = results.length > PAGE_SIZE
+      const messageList = hasMore ? results.slice(0, PAGE_SIZE) : results
+      const nextCursor = hasMore
+        ? encodeCursor(
+            messageType === 'sent'
+              ? messageList[PAGE_SIZE - 1].sentAt!.getTime()
+              : messageList[PAGE_SIZE - 1].receivedAt.getTime(),
+            messageList[PAGE_SIZE - 1].id
+          )
+        : null
+
+      return NextResponse.json({
+        messages: messageList.map(msg => ({
+          id: msg.id,
+          sender: msg.sender,
+          recipient: msg.recipient,
+          subject: msg.subject,
+          sentAt: msg.sentAt?.getTime(),
+          receivedAt: msg.receivedAt.getTime()
+        })),
+        nextCursor,
+        total: totalCount
+      })
+    }
+
     const results = await db.query.messages.findMany({
       where: and(...conditions),
       orderBy: (messages, { desc }) => [

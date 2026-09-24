@@ -9,6 +9,7 @@ import { useThrottle } from "@/hooks/use-throttle"
 import { EMAIL_CONFIG } from "@/config"
 import { useToast } from "@/components/ui/use-toast"
 import { ShareMessageDialog } from "./share-message-dialog"
+import { formatSenderAddress } from "@/lib/email-address"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,23 +49,6 @@ interface MessageResponse {
   total: number
 }
 
-// 解析 RFC5322 发件人：优先显示名，无则回退邮箱地址，去掉尖括号包装
-function parseSenderDisplay(raw?: string): string {
-  if (!raw) return ''
-  const s = raw.trim()
-  // "Display Name" <addr@x> 或 Display Name <addr@x>
-  const m = s.match(/^\s*("?)(.*?)\1\s*<([^>]+)>\s*$/)
-  if (m) {
-    const name = m[2].trim()
-    const addr = m[3].trim()
-    return name || addr
-  }
-  // 纯 <addr@x>
-  const bare = s.match(/^<([^>]+)>$/)
-  if (bare) return bare[1].trim()
-  return s
-}
-
 export function MessageList({ email, messageType, onMessageSelect, selectedMessageId, refreshTrigger }: MessageListProps) {
   const t = useTranslations("emails.messages")
   const tList = useTranslations("emails.list")
@@ -88,6 +72,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   const fetchMessages = async (cursor?: string) => {
     try {
       const url = new URL(`/api/emails/${email.id}`, window.location.origin)
+      url.searchParams.set('summary', '1')
       if (messageType === 'sent') {
         url.searchParams.set('type', 'sent')
       }
@@ -95,7 +80,13 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
         url.searchParams.set('cursor', cursor)
       }
       const response = await fetch(url)
-      const data = await response.json() as MessageResponse
+      const data = await response.json() as MessageResponse & { error?: string }
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to fetch messages: HTTP ${response.status}`)
+      }
+      if (!Array.isArray(data.messages)) {
+        throw new Error("Invalid message-list response")
+      }
       
       if (!cursor) {
         const newMessages = data.messages
@@ -265,7 +256,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
                       <span className="truncate" title={message.sender || message.recipient || ''}>
                         {messageType === 'sent'
                           ? (message.recipient || '')
-                          : parseSenderDisplay(message.sender) || message.recipient || ''}
+                          : formatSenderAddress(message.sender) || message.recipient || ''}
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />

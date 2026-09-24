@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { useTheme } from "next-themes"
 import { useToast } from "@/components/ui/use-toast"
 import { ShareMessageDialog } from "./share-message-dialog"
+import { formatSenderAddress } from "@/lib/email-address"
 
 interface Message {
   id: string
@@ -225,7 +226,7 @@ export function MessageView({ emailId, messageId, messageType = 'received' }: Me
         </div>
         <div className="text-xs text-gray-500 space-y-1">
           {message.sender && (
-            <p>{t("from")}: {message.sender}</p>
+            <p title={message.sender}>{t("from")}: {formatSenderAddress(message.sender)}</p>
           )}
           {message.recipient && (
             <p>{t("to")}: {message.recipient}</p>

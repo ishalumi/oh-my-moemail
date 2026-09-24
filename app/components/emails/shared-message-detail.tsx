@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "next-themes"
+import { formatSenderAddress } from "@/lib/email-address"
 
 interface MessageDetail {
   id: string
@@ -178,8 +179,8 @@ export function SharedMessageDetail({
         </div>
         <div className="text-xs text-gray-500 space-y-1">
           {message.sender && (
-            <p>
-              {t.from}: {message.sender}
+            <p title={message.sender}>
+              {t.from}: {formatSenderAddress(message.sender)}
             </p>
           )}
           {message.recipient && (
