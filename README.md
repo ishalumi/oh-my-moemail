@@ -544,11 +544,14 @@ GET /api/emails?cursor=xxx
 
 #### 获取指定邮箱邮件列表
 ```http
-GET /api/emails/{emailId}?cursor=xxx
+GET /api/emails/{emailId}?summary=1&cursor=xxx
 ```
 参数说明：
 - `emailId`: 邮箱的唯一标识符，必填
+- `summary`: 传 `1` 时仅从 D1 查询并返回邮件元数据，推荐用于轮询；不传时保持兼容，返回包含 `text`/`html` 的完整列表
 - `cursor`: 分页游标，可选
+
+> 轮询验证码或刷新前端列表时应使用 `summary=1`，避免把整页邮件正文载入 Worker。需要正文时再调用单封邮件接口。
 
 返回响应：
 ```json

@@ -490,8 +490,13 @@ Params:
 
 #### Get Messages for Email
 ```http
-GET /api/emails/{emailId}?cursor=xxx
+GET /api/emails/{emailId}?summary=1&cursor=xxx
 ```
+Params:
+- `summary`: Set to `1` to query and return metadata only. Use this mode for polling. Omitting it preserves the legacy full-list response, including `text` and `html`.
+- `cursor`: Optional pagination cursor
+
+Use the single-message endpoint below when the full body is needed.
 
 #### Delete Email
 ```http
