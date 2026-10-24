@@ -12,6 +12,7 @@ import { hashPassword, comparePassword } from "@/lib/utils"
 import { authSchema, AuthSchema } from "@/lib/validation"
 import { generateAvatarUrl } from "./avatar"
 import { getUserId } from "./apiKey"
+import { getForwardedIdentity } from "./request-identity"
 import { verifyTurnstileToken } from "./turnstile"
 
 const ROLE_DESCRIPTIONS: Record<Role, string> = {
@@ -64,13 +65,46 @@ export async function assignRoleToUser(db: Db, userId: string, roleId: string) {
     })
 }
 
-export async function getUserRole(userId: string) {
+const IDENTITY_REFRESH_MS = 5 * 60 * 1000
+
+async function loadIdentity(userId: string) {
+  const db = createDb()
+  const [roleRecords, userAccounts] = await Promise.all([
+    db.query.userRoles.findMany({
+      where: eq(userRoles.userId, userId),
+      with: { role: true },
+    }),
+    db.query.accounts.findMany({
+      where: eq(accounts.userId, userId),
+      columns: { provider: true },
+    }),
+  ])
+
+  let roleNames = roleRecords.map(ur => ur.role.name)
+  if (!roleNames.length) {
+    const role = await findOrCreateRole(db, await getDefaultRole())
+    await assignRoleToUser(db, userId, role.id)
+    roleNames = [role.name]
+  }
+
+  return { roles: roleNames, providers: userAccounts.map(account => account.provider) }
+}
+
+async function getRoleNames(userId: string): Promise<string[]> {
+  const forwarded = await getForwardedIdentity()
+  if (forwarded?.userId === userId) return forwarded.roles
+
   const db = createDb()
   const userRoleRecords = await db.query.userRoles.findMany({
     where: eq(userRoles.userId, userId),
     with: { role: true },
   })
-  return userRoleRecords[0].role.name
+  return userRoleRecords.map(ur => ur.role.name)
+}
+
+export async function getUserRole(userId: string) {
+  const roleNames = await getRoleNames(userId)
+  return roleNames[0]
 }
 
 export async function checkPermission(permission: Permission) {
@@ -78,13 +112,7 @@ export async function checkPermission(permission: Permission) {
 
   if (!userId) return false
 
-  const db = createDb()
-  const userRoleRecords = await db.query.userRoles.findMany({
-    where: eq(userRoles.userId, userId),
-    with: { role: true },
-  })
-
-  const userRoleNames = userRoleRecords.map(ur => ur.role.name)
+  const userRoleNames = await getRoleNames(userId)
   return hasPermission(userRoleNames as Role[], permission)
 }
 
@@ -183,13 +211,24 @@ export const {
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.name = user.name || user.username
         token.username = user.username
         token.image = user.image || generateAvatarUrl(token.name as string)
       }
+
+      // 角色/登录方式缓存进 JWT，避免每次 auth() 都查库；定期刷新以感知角色变更
+      const refreshedAt = typeof token.identityRefreshedAt === "number" ? token.identityRefreshedAt : 0
+      const stale = Date.now() - refreshedAt > IDENTITY_REFRESH_MS
+      if (token.id && (user || trigger === "update" || !Array.isArray(token.roles) || stale)) {
+        const identity = await loadIdentity(token.id as string)
+        token.roles = identity.roles
+        token.providers = identity.providers
+        token.identityRefreshedAt = Date.now()
+      }
+
       return token
     },
     async session({ session, token }) {
@@ -198,34 +237,8 @@ export const {
         session.user.name = token.name as string
         session.user.username = token.username as string
         session.user.image = token.image as string
-
-        const db = createDb()
-        let userRoleRecords = await db.query.userRoles.findMany({
-          where: eq(userRoles.userId, session.user.id),
-          with: { role: true },
-        })
-
-        if (!userRoleRecords.length) {
-          const defaultRole = await getDefaultRole()
-          const role = await findOrCreateRole(db, defaultRole)
-          await assignRoleToUser(db, session.user.id, role.id)
-          userRoleRecords = [{
-            userId: session.user.id,
-            roleId: role.id,
-            createdAt: new Date(),
-            role: role
-          }]
-        }
-
-        session.user.roles = userRoleRecords.map(ur => ({
-          name: ur.role.name,
-        }))
-
-        const userAccounts = await db.query.accounts.findMany({
-          where: eq(accounts.userId, session.user.id),
-        })
-
-        session.user.providers = userAccounts.map(account => account.provider)
+        session.user.roles = ((token.roles as string[] | undefined) ?? []).map(name => ({ name }))
+        session.user.providers = (token.providers as string[] | undefined) ?? []
       }
 
       return session
