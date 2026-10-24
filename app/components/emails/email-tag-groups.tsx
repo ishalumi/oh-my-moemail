@@ -132,9 +132,12 @@ export function EmailTagGroups({
       setSummary(data)
       onTotalChange(data.total)
 
-      const available = new Set([...data.tags.map(g => g.tag.toLowerCase()), ...(data.untagged ? [UNTAGGED_KEY] : [])])
+      // 展开状态按小写 key 记忆，拉取时用原始大小写的标签名
+      const tagByKey = new Map(data.tags.map(g => [g.tag.toLowerCase(), g.tag]))
+      if (data.untagged) tagByKey.set(UNTAGGED_KEY, UNTAGGED_KEY)
       for (const key of expandedRef.current) {
-        if (available.has(key)) fetchGroupPage(key === UNTAGGED_KEY ? key : data.tags.find(g => g.tag.toLowerCase() === key)!.tag)
+        const tag = tagByKey.get(key)
+        if (tag) fetchGroupPage(tag)
       }
     } catch (error) {
       console.error("Failed to fetch email tags:", error)

@@ -3,7 +3,8 @@ import { sql } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { emails } from "@/lib/schema"
 import { getUserId } from "@/lib/apiKey"
-import { buildEmailFilters, parseTags } from "@/lib/email-filters"
+import { buildEmailFilters } from "@/lib/email-filters"
+import { parseTags } from "@/lib/email-tags"
 
 export const runtime = "edge"
 

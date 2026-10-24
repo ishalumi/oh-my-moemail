@@ -1,9 +1,7 @@
 import { and, gt, gte, like, lt, or, sql, eq, type SQL } from "drizzle-orm"
 import { emails } from "@/lib/schema"
 
-export { parseTags } from "@/lib/email-tags"
-
-export const PERMANENT_DATE = new Date('9999-01-01T00:00:00.000Z')
+const PERMANENT_DATE = new Date('9999-01-01T00:00:00.000Z')
 
 function escapeLike(value: string) {
   return value.replace(/[\\%_]/g, (c) => `\\${c}`)

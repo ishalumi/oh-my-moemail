@@ -147,7 +147,6 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       setRefreshKey(k => k + 1)
       return
     }
-    setRefreshKey(k => k + 1)
     setRefreshing(true)
     await fetchEmails()
   }
