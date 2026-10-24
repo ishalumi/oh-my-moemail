@@ -36,7 +36,12 @@
     "allDomains": "全部域名",
     "editLabel": "编辑备注",
     "labelSaved": "备注已保存",
-    "labelSaveFailed": "备注保存失败"
+    "labelSaveFailed": "备注保存失败",
+    "viewList": "列表视图",
+    "viewGrouped": "按标签分组",
+    "untagged": "无标签",
+    "loadMore": "加载更多（{loaded}/{total}）",
+    "labelPlaceholder": "标签，多个用逗号分隔"
   },
   "create": {
     "title": "创建邮箱",

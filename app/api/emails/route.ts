@@ -1,52 +1,24 @@
 import { createDb } from "@/lib/db"
-import { and, eq, gt, lt, or, sql, like, gte } from "drizzle-orm"
+import { and, eq, lt, or, sql } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { emails } from "@/lib/schema"
 import { encodeCursor, decodeCursor } from "@/lib/cursor"
 import { getUserId } from "@/lib/apiKey"
+import { buildEmailFilters } from "@/lib/email-filters"
 
 export const runtime = "edge"
 
 const PAGE_SIZE = 20
-const PERMANENT_DATE = new Date('9999-01-01T00:00:00.000Z')
 
 export async function GET(request: Request) {
   const userId = await getUserId()
   const { searchParams } = new URL(request.url)
   const cursor = searchParams.get('cursor')
-  const type = searchParams.get('type')
-  const domain = searchParams.get('domain')
-  const search = searchParams.get('search')
 
   const db = createDb()
 
   try {
-    const conditions = [
-      eq(emails.userId, userId!),
-      gt(emails.expiresAt, new Date())
-    ]
-
-    if (type === 'permanent') {
-      conditions.push(gte(emails.expiresAt, PERMANENT_DATE))
-    } else if (type === 'temporary') {
-      conditions.push(lt(emails.expiresAt, PERMANENT_DATE))
-    }
-
-    if (domain) {
-      conditions.push(like(emails.address, `%@${domain}`))
-    }
-
-    if (search) {
-      const kw = search.toLowerCase()
-      conditions.push(
-        or(
-          like(sql`LOWER(${emails.address})`, `%${kw}%`),
-          like(sql`LOWER(COALESCE(${emails.label},''))`, `%${kw}%`)
-        )!
-      )
-    }
-
-    const baseConditions = and(...conditions)
+    const baseConditions = buildEmailFilters(userId!, searchParams)
 
     const totalResult = await db.select({ count: sql<number>`count(*)` })
       .from(emails)
@@ -64,7 +36,7 @@ export async function GET(request: Request) {
             eq(emails.createdAt, new Date(timestamp)),
             lt(emails.id, id)
           )
-        )
+        )!
       )
     }
 

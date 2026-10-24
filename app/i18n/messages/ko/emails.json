@@ -36,7 +36,12 @@
     "allDomains": "전체 도메인",
     "editLabel": "메모 편집",
     "labelSaved": "메모가 저장됨",
-    "labelSaveFailed": "메모 저장 실패"
+    "labelSaveFailed": "메모 저장 실패",
+    "viewList": "목록 보기",
+    "viewGrouped": "태그별 그룹",
+    "untagged": "태그 없음",
+    "loadMore": "더 보기 ({loaded}/{total})",
+    "labelPlaceholder": "태그, 쉼표로 구분"
   },
   "create": {
     "title": "이메일 생성",

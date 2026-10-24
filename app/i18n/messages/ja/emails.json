@@ -36,7 +36,12 @@
     "allDomains": "すべてのドメイン",
     "editLabel": "メモを編集",
     "labelSaved": "メモを保存しました",
-    "labelSaveFailed": "メモの保存に失敗"
+    "labelSaveFailed": "メモの保存に失敗",
+    "viewList": "リスト表示",
+    "viewGrouped": "タグでグループ化",
+    "untagged": "タグなし",
+    "loadMore": "さらに読み込む（{loaded}/{total}）",
+    "labelPlaceholder": "タグ（カンマ区切り）"
   },
   "create": {
     "title": "メールボックスを作成",

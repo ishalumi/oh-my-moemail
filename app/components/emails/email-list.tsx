@@ -4,8 +4,9 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import { CreateDialog } from "./create-dialog"
-import { ShareDialog } from "./share-dialog"
-import { Mail, RefreshCw, Trash2, Search, Tag } from "lucide-react"
+import { EmailRow, type Email } from "./email-row"
+import { EmailTagGroups } from "./email-tag-groups"
+import { RefreshCw, Search, List, FolderTree } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,13 +30,8 @@ import { ROLES } from "@/lib/permissions"
 import { useUserRole } from "@/hooks/use-user-role"
 import { useConfig } from "@/hooks/use-config"
 
-interface Email {
-  id: string
-  address: string
-  createdAt: number
-  expiresAt: number
-  label?: string | null
-}
+type ViewMode = "list" | "grouped"
+const VIEW_MODE_STORAGE_KEY = "moemail.emailViewMode"
 
 interface EmailListProps {
   onEmailSelect: (email: Email | null) => void
@@ -67,17 +63,35 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
   const [activeTab, setActiveTab] = useState<"all" | "permanent" | "temporary">("all")
   const [selectedDomain, setSelectedDomain] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("")
+  const [viewMode, setViewMode] = useState<ViewMode>("grouped")
+  const [refreshKey, setRefreshKey] = useState(0)
   const { toast } = useToast()
 
   // 用 ref 跟踪最新值，避免闭包捕获旧值
   const activeTabRef = useRef(activeTab)
   const selectedDomainRef = useRef(selectedDomain)
-  const searchQueryRef = useRef(searchQuery)
+  const searchQueryRef = useRef(debouncedSearch)
   const emailsRef = useRef(emails)
   activeTabRef.current = activeTab
   selectedDomainRef.current = selectedDomain
-  searchQueryRef.current = searchQuery
+  searchQueryRef.current = debouncedSearch
   emailsRef.current = emails
+  const isGrouped = viewMode === "grouped"
+
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
+    if (saved === "list" || saved === "grouped") setViewMode(saved)
+  }, [])
+
+  const changeViewMode = (mode: ViewMode) => {
+    setViewMode(mode)
+    try {
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode)
+    } catch {
+      // 忽略 localStorage 不可用
+    }
+  }
 
   const fetchEmails = useCallback(async (cursor?: string) => {
     try {
@@ -121,13 +135,25 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
     }
   }, [])
 
+  const reloadList = () => {
+    setEmails([])
+    setNextCursor(null)
+    setLoading(true)
+    fetchEmails()
+  }
+
   const handleRefresh = async () => {
+    if (isGrouped) {
+      setRefreshKey(k => k + 1)
+      return
+    }
+    setRefreshKey(k => k + 1)
     setRefreshing(true)
     await fetchEmails()
   }
 
   const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
-    if (loadingMore) return
+    if (isGrouped || loadingMore) return
 
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget
     const threshold = clientHeight * 1.5
@@ -139,34 +165,17 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
     }
   }, 200)
 
-  useEffect(() => {
-    if (session) fetchEmails()
-  }, [session])
-
-  // Tab/域名筛选变化时重新加载
-  useEffect(() => {
-    if (session) {
-      setEmails([])
-      setNextCursor(null)
-      setLoading(true)
-      fetchEmails()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, selectedDomain])
-
   // 搜索防抖
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (session) {
-        setEmails([])
-        setNextCursor(null)
-        setLoading(true)
-        fetchEmails()
-      }
-    }, 300)
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
+
+  // 列表模式：登录、筛选、切回列表时重新加载；分组模式由 EmailTagGroups 自己拉
+  useEffect(() => {
+    if (session && !isGrouped) reloadList()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, activeTab, selectedDomain, debouncedSearch, isGrouped])
 
   const handleDelete = async (email: Email) => {
     try {
@@ -186,6 +195,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
       setEmails(prev => prev.filter(e => e.id !== email.id))
       setTotal(prev => prev - 1)
+      if (isGrouped) setRefreshKey(k => k + 1)
 
       toast({
         title: t("success"),
@@ -228,6 +238,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
       const newLabel = labelDraft.trim() || null
       setEmails(prev => prev.map(e => e.id === emailToEditLabel.id ? { ...e, label: newLabel } : e))
+      if (isGrouped) setRefreshKey(k => k + 1)
       toast({ title: t("success"), description: t("labelSaved") })
       setEmailToEditLabel(null)
     } catch {
@@ -235,6 +246,11 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
     } finally {
       setSavingLabel(false)
     }
+  }
+
+  const openLabelEditor = (email: Email) => {
+    setLabelDraft(email.label || "")
+    setEmailToEditLabel(email)
   }
 
   if (!session) return null
@@ -263,7 +279,27 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                 )}
               </span>
             </div>
-            <CreateDialog onEmailCreated={handleRefresh} />
+            <div className="flex items-center gap-1">
+              <Button
+                variant={isGrouped ? "ghost" : "secondary"}
+                size="icon"
+                className="h-8 w-8"
+                title={t("viewList")}
+                onClick={() => changeViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={isGrouped ? "secondary" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                title={t("viewGrouped")}
+                onClick={() => changeViewMode("grouped")}
+              >
+                <FolderTree className="h-4 w-4" />
+              </Button>
+              <CreateDialog onEmailCreated={handleRefresh} />
+            </div>
           </div>
 
           {/* 第二行：Tab 切换 */}
@@ -303,64 +339,29 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
         </div>
 
         <div className="flex-1 overflow-auto p-2" onScroll={handleScroll}>
-          {loading ? (
+          {isGrouped ? (
+            <EmailTagGroups
+              filters={{ type: activeTab, domain: selectedDomain, search: debouncedSearch }}
+              refreshKey={refreshKey}
+              selectedEmailId={selectedEmailId}
+              onEmailSelect={onEmailSelect}
+              onEditLabel={openLabelEditor}
+              onDelete={setEmailToDelete}
+              onTotalChange={setTotal}
+            />
+          ) : loading ? (
             <div className="text-center text-sm text-gray-500">{t("loading")}</div>
           ) : emails.length > 0 ? (
             <div className="space-y-1">
               {emails.map(email => (
-                <div
+                <EmailRow
                   key={email.id}
-                  className={cn("flex items-center gap-2 p-2 rounded cursor-pointer text-sm group",
-                    "hover:bg-primary/5",
-                    selectedEmailId === email.id && "bg-primary/10"
-                  )}
-                  onClick={() => onEmailSelect(email)}
-                >
-                  <Mail className="h-4 w-4 text-primary/60" />
-                  <div className="truncate flex-1">
-                    <div className="font-medium truncate">{email.address}</div>
-                    {email.label && (
-                      <div className="text-xs text-primary/70 truncate flex items-center gap-1">
-                        <Tag className="h-3 w-3 shrink-0" />
-                        {email.label}
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500">
-                      {new Date(email.expiresAt).getFullYear() === 9999 ? (
-                        t("permanent")
-                      ) : (
-                        `${t("expiresAt")}: ${new Date(email.expiresAt).toLocaleString()}`
-                      )}
-                    </div>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 flex gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      title={t("editLabel")}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setLabelDraft(email.label || "")
-                        setEmailToEditLabel(email)
-                      }}
-                    >
-                      <Tag className="h-4 w-4" />
-                    </Button>
-                    <ShareDialog emailId={email.id} emailAddress={email.address} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEmailToDelete(email)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
+                  email={email}
+                  selected={selectedEmailId === email.id}
+                  onSelect={onEmailSelect}
+                  onEditLabel={openLabelEditor}
+                  onDelete={setEmailToDelete}
+                />
               ))}
               {loadingMore && (
                 <div className="text-center text-sm text-gray-500 py-2">
@@ -386,7 +387,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
             <Input
               value={labelDraft}
               onChange={(e) => setLabelDraft(e.target.value)}
-              placeholder={t("searchPlaceholder")}
+              placeholder={t("labelPlaceholder")}
               onKeyDown={(e) => { if (e.key === "Enter" && !savingLabel) handleSaveLabel() }}
               autoFocus
             />

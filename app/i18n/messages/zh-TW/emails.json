@@ -36,7 +36,12 @@
     "allDomains": "全部域名",
     "editLabel": "編輯備註",
     "labelSaved": "備註已保存",
-    "labelSaveFailed": "備註保存失敗"
+    "labelSaveFailed": "備註保存失敗",
+    "viewList": "列表檢視",
+    "viewGrouped": "按標籤分組",
+    "untagged": "無標籤",
+    "loadMore": "載入更多（{loaded}/{total}）",
+    "labelPlaceholder": "標籤，多個用逗號分隔"
   },
   "create": {
     "title": "建立郵箱",

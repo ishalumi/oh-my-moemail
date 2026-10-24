@@ -36,7 +36,12 @@
     "allDomains": "All domains",
     "editLabel": "Edit note",
     "labelSaved": "Note saved",
-    "labelSaveFailed": "Failed to save note"
+    "labelSaveFailed": "Failed to save note",
+    "viewList": "List view",
+    "viewGrouped": "Group by tag",
+    "untagged": "Untagged",
+    "loadMore": "Load more ({loaded}/{total})",
+    "labelPlaceholder": "Tags, comma separated"
   },
   "create": {
     "title": "Create Email",
